@@ -1,122 +1,187 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      home: InvestmentForm(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class InvestmentForm extends StatefulWidget {
+  const InvestmentForm({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<InvestmentForm> createState() => _InvestmentFormState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _InvestmentFormState extends State<InvestmentForm> {
+  final TextEditingController _targetController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
 
-  void _incrementCounter() {
+  double _timeFrame = 5;
+  double _riskValue = 3;
+  String _investmentFrequency = 'Recurring';
+
+  // Convert riskValue to label
+  String get _riskLabel {
+    if (_riskValue <= 2) return "Conservative";
+    if (_riskValue >= 4) return "Aggressive";
+    return "Moderate";
+  }
+
+  void _onRiskRadioChange(String? value) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _riskValue = value == "Conservative" ? 1 : 5;
     });
+  }
+
+  void _submitForm() {
+    final summary = '''
+🎯 Target Amount: ₹${_targetController.text}
+📅 Timeframe: ${_timeFrame.toStringAsFixed(0)} years
+📊 Risk Appetite: $_riskLabel
+🔁 Frequency: $_investmentFrequency
+💰 Investment Amount: ₹${_amountController.text}
+''';
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Investment Summary'),
+        content: Text(summary),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          )
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _targetController.dispose();
+    _amountController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      appBar: AppBar(title: const Text("Investment Planner")),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            // Target Amount
+            const Text("🎯 Target amount to achieve"),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _targetController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: 'Enter target amount (₹)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Timeframe Slider
+            Text("⏳ Select timeframe to achieve (${_timeFrame.toStringAsFixed(0)} years)"),
+            Slider(
+              value: _timeFrame,
+              min: 1,
+              max: 30,
+              divisions: 29,
+              label: _timeFrame.toStringAsFixed(0),
+              onChanged: (value) => setState(() => _timeFrame = value),
+            ),
+            const SizedBox(height: 20),
+
+            // Risk Appetite Slider + Radio
+            Text("📊 Risk Appetite ($_riskLabel)"),
+            Slider(
+              value: _riskValue,
+              min: 1,
+              max: 5,
+              divisions: 4,
+              label: _riskLabel,
+              onChanged: (value) => setState(() => _riskValue = value),
+            ),
+            Row(
+              children: [
+                Radio<String>(
+                  value: "Conservative",
+                  groupValue: _riskLabel,
+                  onChanged: _onRiskRadioChange,
+                ),
+                const Text("Conservative"),
+                const SizedBox(width: 20),
+                Radio<String>(
+                  value: "Aggressive",
+                  groupValue: _riskLabel,
+                  onChanged: _onRiskRadioChange,
+                ),
+                const Text("Aggressive"),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Investment Frequency (on same line)
+            const Text("🔁 Investment Frequency"),
+            Row(
+              children: [
+                Radio<String>(
+                  value: 'Recurring',
+                  groupValue: _investmentFrequency,
+                  onChanged: (value) =>
+                      setState(() => _investmentFrequency = value!),
+                ),
+                const Text('Recurring'),
+                const SizedBox(width: 20),
+                Radio<String>(
+                  value: 'Lumpsum',
+                  groupValue: _investmentFrequency,
+                  onChanged: (value) =>
+                      setState(() => _investmentFrequency = value!),
+                ),
+                const Text('Lumpsum'),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Investment Amount
+            const Text("💰 Investment Amount"),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: 'Enter investment amount (₹)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Submit
+            Center(
+              child: ElevatedButton(
+                onPressed: _submitForm,
+                child: const Text("Submit"),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
